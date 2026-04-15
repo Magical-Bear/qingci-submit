@@ -8,4 +8,11 @@ wheels/
 weights/
 # Virtual environments
 .venv
+.env
 .DS_Store
+.pytest_cache/
+.claude/
+data/
+tests/
+pytest.ini/
+codes/evaluation/
