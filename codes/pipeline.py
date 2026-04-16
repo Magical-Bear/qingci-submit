@@ -2,20 +2,31 @@
 全流程编排 — LangGraph StateGraph (Pipeline 模式，非 ReAct Agent)
 
 节点流程:
-  新工单: translate_ja → classify → retrieve → generate_draft
+  新工单: translate_and_classify → retrieve → generate_draft
   确认:   finalize → translate_zh_to_ja
-  追加:   translate_followup → classify_followup → retrieve → generate_followup_draft
+  追加:   translate_and_classify_followup → retrieve → generate_followup_draft
 """
 from __future__ import annotations
 
+import asyncio
+import logging
+import time
 from typing import Any, Literal, TypedDict
 
 from langgraph.graph import END, StateGraph
 from langgraph.checkpoint.memory import MemorySaver
 
-from codes import llm, prompts
+from codes import baidu_translate, llm, prompts
 from codes.config import settings
 from codes.retriever import hybrid_search
+
+_logger = logging.getLogger(__name__)
+
+
+def _t(label: str, start: float) -> None:
+    """如果 ENABLE_TIMING=true，打印节点耗时。"""
+    if settings.enable_timing:
+        _logger.warning("[TIMING] %-28s %.3fs", label, time.perf_counter() - start)
 
 
 # ============================================================
@@ -51,21 +62,23 @@ class TicketState(TypedDict, total=False):
 # 节点实现
 # ============================================================
 
-async def node_translate_ja(state: TicketState) -> dict:
-    messages = prompts.translate_ja_to_zh(state["question_ja"])
-    question_zh = await llm.chat(messages)
-    return {"question_zh": question_zh, "_step": "translated"}
+async def node_translate_and_classify(state: TicketState) -> dict:
+    """百度翻译(JA→ZH) 与 Kimi 意图分类并行执行"""
+    _start = time.perf_counter()
+    question_ja = state["question_ja"]
 
+    translate_task = baidu_translate.translate_ja_to_zh(question_ja)
+    classify_task = llm.chat(prompts.classify_intent(question_ja))
+    question_zh, intent_raw = await asyncio.gather(translate_task, classify_task)
 
-async def node_classify(state: TicketState) -> dict:
-    messages = prompts.classify_intent(state["question_zh"])
-    intent_raw = await llm.chat(messages)
-    # 归一化到已知标签
-    intent = _normalize_intent(intent_raw)
-    return {"intent": intent, "_step": "classified"}
+    intent_ja = _normalize_intent(intent_raw)
+    intent = _INTENT_ZH_MAP.get(intent_ja, intent_ja)
+    _t("node_translate_and_classify", _start)
+    return {"question_zh": question_zh, "intent": intent, "_step": "translated_and_classified"}
 
 
 async def node_retrieve(state: TicketState) -> dict:
+    _start = time.perf_counter()
     query = state["question_zh"]
     # 如果是追加消息，拼接初始问题提升召回
     if "followup_zh" in state and state["followup_zh"]:
@@ -82,15 +95,17 @@ async def node_retrieve(state: TicketState) -> dict:
     ):
         confidence = "high"
 
+    _t("node_retrieve", _start)
     return {"similar_cases": cases, "confidence": confidence, "_step": "retrieved"}
 
 
 async def node_generate_draft(state: TicketState) -> dict:
+    _start = time.perf_counter()
     # 高置信直接用历史回复翻成中文草稿，跳过 LLM 生成
     if state.get("confidence") == "high":
         top_case = state["similar_cases"][0]
-        messages = prompts.translate_ja_to_zh(top_case["answer"])
-        draft_zh = await llm.chat(messages)
+        draft_zh = await baidu_translate.translate_ja_to_zh(top_case["answer"])
+        _t("node_generate_draft (high-conf translate)", _start)
         return {"draft_zh": draft_zh, "_step": "draft_generated"}
 
     messages = prompts.generate_draft_zh(
@@ -100,11 +115,13 @@ async def node_generate_draft(state: TicketState) -> dict:
         conversation_history=state.get("conversation_history"),
     )
     draft_zh = await llm.chat(messages)
+    _t("node_generate_draft", _start)
     return {"draft_zh": draft_zh, "_step": "draft_generated"}
 
 
 async def node_finalize(state: TicketState) -> dict:
     """客服确认草稿 → 翻译成日语敬语"""
+    _start = time.perf_counter()
     messages = prompts.translate_zh_to_ja_polite(state["draft_zh_confirmed"])
     reply_ja = await llm.chat(messages)
 
@@ -113,6 +130,7 @@ async def node_finalize(state: TicketState) -> dict:
     history.append({"role": "player", "content_zh": state["question_zh"]})
     history.append({"role": "staff", "content_zh": state["draft_zh_confirmed"]})
 
+    _t("node_finalize", _start)
     return {
         "reply_ja": reply_ja,
         "conversation_history": history,
@@ -120,20 +138,28 @@ async def node_finalize(state: TicketState) -> dict:
     }
 
 
-async def node_translate_followup(state: TicketState) -> dict:
-    messages = prompts.translate_ja_to_zh(state["followup_ja"])
-    followup_zh = await llm.chat(messages)
-    return {"followup_zh": followup_zh, "_step": "followup_translated"}
+async def node_translate_and_classify_followup(state: TicketState) -> dict:
+    """百度翻译(JA→ZH) 与 Kimi 追加分类并行执行"""
+    _start = time.perf_counter()
+    followup_ja = state["followup_ja"]
 
-
-async def node_classify_followup(state: TicketState) -> dict:
     history = state.get("conversation_history") or []
     history_summary = " → ".join(
         f"[{t['role']}] {t['content_zh'][:30]}..." for t in history[-4:]
     )
-    messages = prompts.classify_followup(state["followup_zh"], history_summary)
-    followup_type_raw = await llm.chat(messages)
-    return {"followup_type": followup_type_raw.strip(), "_step": "followup_classified"}
+
+    translate_task = baidu_translate.translate_ja_to_zh(followup_ja)
+    classify_task = llm.chat(prompts.classify_followup(followup_ja, history_summary))
+    followup_zh, followup_type_raw = await asyncio.gather(translate_task, classify_task)
+
+    followup_type_ja = followup_type_raw.strip()
+    followup_type = _FOLLOWUP_TYPE_ZH_MAP.get(followup_type_ja, followup_type_ja)
+    _t("node_translate_and_classify_followup", _start)
+    return {
+        "followup_zh": followup_zh,
+        "followup_type": followup_type,
+        "_step": "followup_translated_and_classified",
+    }
 
 
 # ============================================================
@@ -153,6 +179,23 @@ _INTENT_MAP = {
     "继承": "データ継承",
 }
 
+# 日语意图标签 → 中文（供客服阅读）
+_INTENT_ZH_MAP: dict[str, str] = {
+    "不具合":   "故障问题",
+    "購入問題": "购买问题",
+    "意見建議": "意见建议",
+    "データ継承": "数据继承",
+    "未知":     "未知",
+}
+
+# 日语追加类型标签 → 中文（供客服阅读）
+_FOLLOWUP_TYPE_ZH_MAP: dict[str, str] = {
+    "補充情報":   "补充信息",
+    "問題未解決": "问题未解决",
+    "新問題":     "新问题",
+    "確認":       "确认",
+}
+
 
 def _normalize_intent(raw: str) -> str:
     raw = raw.strip()
@@ -167,16 +210,14 @@ def _normalize_intent(raw: str) -> str:
 # ============================================================
 
 def _build_new_ticket_graph() -> Any:
-    """新工单处理图: translate → classify → retrieve → generate_draft"""
+    """新工单处理图: translate_and_classify → retrieve → generate_draft"""
     g = StateGraph(TicketState)
-    g.add_node("translate_ja", node_translate_ja)
-    g.add_node("classify", node_classify)
+    g.add_node("translate_and_classify", node_translate_and_classify)
     g.add_node("retrieve", node_retrieve)
     g.add_node("generate_draft", node_generate_draft)
 
-    g.set_entry_point("translate_ja")
-    g.add_edge("translate_ja", "classify")
-    g.add_edge("classify", "retrieve")
+    g.set_entry_point("translate_and_classify")
+    g.add_edge("translate_and_classify", "retrieve")
     g.add_edge("retrieve", "generate_draft")
     g.add_edge("generate_draft", END)
 
@@ -193,16 +234,14 @@ def _build_finalize_graph() -> Any:
 
 
 def _build_followup_graph() -> Any:
-    """追加消息图: translate_followup → classify_followup → retrieve → generate_draft"""
+    """追加消息图: translate_and_classify_followup → retrieve → generate_draft"""
     g = StateGraph(TicketState)
-    g.add_node("translate_followup", node_translate_followup)
-    g.add_node("classify_followup", node_classify_followup)
+    g.add_node("translate_and_classify_followup", node_translate_and_classify_followup)
     g.add_node("retrieve", node_retrieve)
     g.add_node("generate_draft", node_generate_draft)
 
-    g.set_entry_point("translate_followup")
-    g.add_edge("translate_followup", "classify_followup")
-    g.add_edge("classify_followup", "retrieve")
+    g.set_entry_point("translate_and_classify_followup")
+    g.add_edge("translate_and_classify_followup", "retrieve")
     g.add_edge("retrieve", "generate_draft")
     g.add_edge("generate_draft", END)
 

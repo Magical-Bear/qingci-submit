@@ -3,6 +3,7 @@ FastAPI 应用入口 — lifespan 管理资源
 """
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -17,6 +18,8 @@ from codes.vector_store import load_index
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 启动：预热 embedding 模型 + 加载 FAISS 索引 + 启动 session 清理
+    if settings.enable_timing:
+        logging.getLogger("codes.pipeline").setLevel(logging.INFO)
     print("正在加载 bge-m3 模型...")
     _load_model()
     print("正在加载 FAISS 索引...")

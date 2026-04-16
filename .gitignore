@@ -16,3 +16,4 @@ data/
 tests/
 pytest.ini/
 codes/evaluation/
+demo_codes/

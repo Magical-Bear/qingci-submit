@@ -41,5 +41,10 @@ class Settings(BaseSettings):
     port: int = 8000
     session_ttl_hours: int = 24
 
+    enable_timing: bool = True
+
+    baidu_translate_app_id: str = os.getenv("BAIDU_TRANSLATE_APP_ID", "")
+    baidu_translate_api_key: str = os.getenv("BAIDU_TRANSLATE_API_KEY", "")
+
 
 settings = Settings()

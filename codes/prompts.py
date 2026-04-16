@@ -28,17 +28,18 @@ def translate_ja_to_zh(text_ja: str) -> list[dict]:
 
 INTENT_LABELS = ["不具合", "購入問題", "意見建議", "データ継承", "未知"]
 
-def classify_intent(text_zh: str) -> list[dict]:
-    labels = "、".join(INTENT_LABELS)
+def classify_intent(text_ja: str) -> list[dict]:
+    labels = "・".join(INTENT_LABELS)
     return [
         {
             "role": "system",
             "content": (
-                f"你是游戏客服意图分类专家。将玩家咨询归类为以下类型之一：{labels}。"
-                "只输出分类结果，不要解释。"
+                f"あなたはゲームカスタマーサポートの問い合わせ分類の専門家です。"
+                f"プレイヤーの問い合わせを次のいずれかに分類してください：{labels}。"
+                "分類結果のみを出力し、説明は不要です。"
             ),
         },
-        {"role": "user", "content": f"玩家咨询内容：\n{text_zh}"},
+        {"role": "user", "content": f"プレイヤーの問い合わせ：\n{text_ja}"},
     ]
 
 
@@ -112,21 +113,22 @@ def translate_zh_to_ja_polite(text_zh: str) -> list[dict]:
 
 FOLLOWUP_TYPES = ["補充情報", "問題未解決", "新問題", "確認"]
 
-def classify_followup(followup_zh: str, history_summary: str) -> list[dict]:
-    labels = "、".join(FOLLOWUP_TYPES)
+def classify_followup(followup_ja: str, history_summary: str) -> list[dict]:
+    labels = "・".join(FOLLOWUP_TYPES)
     return [
         {
             "role": "system",
             "content": (
-                f"你是客服对话分析专家。判断玩家追加消息的类型：{labels}。"
-                "只输出分类结果。"
+                f"あなたはカスタマーサポート対話分析の専門家です。"
+                f"プレイヤーの追加メッセージのタイプを判定してください：{labels}。"
+                "判定結果のみを出力し、説明は不要です。"
             ),
         },
         {
             "role": "user",
             "content": (
-                f"对话背景：{history_summary}\n\n"
-                f"玩家追加消息：{followup_zh}"
+                f"対話の背景：{history_summary}\n\n"
+                f"プレイヤーの追加メッセージ：{followup_ja}"
             ),
         },
     ]

@@ -2,8 +2,8 @@
 Kimi API 客户端 (OpenAI 兼容)
 带重试、异步
 """
-from openai import AsyncOpenAI
-from tenacity import retry, stop_after_attempt, wait_exponential
+from openai import AsyncOpenAI, RateLimitError
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from codes.config import settings
 
@@ -16,8 +16,9 @@ def get_client() -> AsyncOpenAI:
 
 
 @retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception_type(RateLimitError),
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=2, min=2, max=60),
     reraise=True,
 )
 async def chat(
