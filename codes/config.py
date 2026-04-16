@@ -17,7 +17,7 @@ INDEX_DIR = DATA_DIR / "index"
 DATASET_DIR = BASE_DIR / "dataset"
 
 FAISS_INDEX_PATH = INDEX_DIR / "faiss.index"
-BM25_PATH = INDEX_DIR / "bm25.pkl"
+SPARSE_PATH = INDEX_DIR / "sparse_vectors.pkl"
 METADATA_PATH = INDEX_DIR / "metadata.pkl"
 
 
@@ -33,8 +33,8 @@ class Settings(BaseSettings):
     kimi_model: str = os.getenv("KIMI_MODEL", "kimi-k2.5")
 
     top_k: int = 3
-    bm25_weight: float = 0.3
-    vector_weight: float = 0.7
+    sparse_weight: float = 0.3
+    dense_weight: float = 0.7
     high_confidence_threshold: float = 0.92
 
     host: str = "0.0.0.0"

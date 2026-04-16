@@ -1,56 +1,41 @@
 """
-BM25 + 向量混合检索
-BM25 0.3 / 向量 0.7
+bge-m3 稀疏 + 向量混合检索
+稀疏 0.3 / 向量 0.7（使用 bge-m3 sparse_linear.pt，替代 BM25）
 """
 import asyncio
 import pickle
 from functools import lru_cache
 
-import faiss
-import fugashi
 import numpy as np
-from rank_bm25 import BM25Okapi
 
-from codes.config import BM25_PATH, settings
-from codes.embedding import encode
+from codes.config import SPARSE_PATH, settings
+from codes.embedding import encode_both
 from codes.vector_store import load_index, search as vector_search
 
 
-# --------------- BM25 构建/加载 ---------------
-
-def build_bm25(corpus: list[str]) -> BM25Okapi:
-    tokenized = [_tokenize(q) for q in corpus]
-    return BM25Okapi(tokenized)
-
-
-def save_bm25(bm25: BM25Okapi) -> None:
-    with open(BM25_PATH, "wb") as f:
-        pickle.dump(bm25, f)
-
+# --------------- 稀疏向量加载 ---------------
 
 @lru_cache(maxsize=1)
-def _load_bm25() -> BM25Okapi:
-    if not BM25_PATH.exists():
-        raise FileNotFoundError("BM25 索引不存在，请先运行 python -m codes.vector_store")
-    with open(BM25_PATH, "rb") as f:
+def _load_sparse_vectors() -> list[dict]:
+    if not SPARSE_PATH.exists():
+        raise FileNotFoundError(
+            "稀疏向量索引不存在，请先运行 python -m codes.vector_store"
+        )
+    with open(SPARSE_PATH, "rb") as f:
         return pickle.load(f)
 
 
-# --------------- 分词 (fugashi/MeCab) ---------------
+# --------------- 稀疏相似度计算 ---------------
 
-_tagger: fugashi.Tagger | None = None
-
-
-def _get_tagger() -> fugashi.Tagger:
-    global _tagger
-    if _tagger is None:
-        _tagger = fugashi.Tagger()
-    return _tagger
-
-
-def _tokenize(text: str) -> list[str]:
-    tagger = _get_tagger()
-    return [word.surface for word in tagger(text) if word.surface.strip()]
+def _sparse_scores(query_sparse: dict, corpus: list[dict]) -> np.ndarray:
+    """计算 query 与语料库中每条文档的稀疏点积分数（SPLADE 风格）"""
+    scores = np.zeros(len(corpus), dtype=np.float32)
+    q_keys = set(query_sparse)
+    for i, doc_sparse in enumerate(corpus):
+        shared = q_keys & set(doc_sparse)
+        if shared:
+            scores[i] = sum(query_sparse[t] * doc_sparse[t] for t in shared)
+    return scores
 
 
 # --------------- 混合检索主函数 ---------------
@@ -60,63 +45,58 @@ async def hybrid_search(
     top_k: int | None = None,
 ) -> list[dict]:
     """
-    BM25 + 向量混合检索
+    bge-m3 稀疏 + 向量混合检索
     返回 top_k 结果，按融合分数降序
     """
     k = top_k or settings.top_k
     index, metadata = load_index()
-    bm25 = _load_bm25()
+    sparse_corpus = _load_sparse_vectors()
 
-    # 并发执行 BM25 检索 + 向量编码
-    query_vec, bm25_scores = await asyncio.gather(
-        encode(query),
-        asyncio.to_thread(_bm25_scores, bm25, query),
-    )
+    # 单次 to_thread 完成稠密 + 稀疏编码（避免 tokenizer 并发冲突）
+    query_dense, query_sparse_list = await encode_both(query)
+    query_sparse = query_sparse_list[0]
 
     # 向量检索（取 top_k * 3 候选，后续融合排序）
     candidate_k = min(k * 3, len(metadata))
-    vector_results = await vector_search(query_vec[0], index, metadata, top_k=candidate_k)
+    vector_results = await vector_search(query_dense[0], index, metadata, top_k=candidate_k)
+
+    # 稀疏分数（全量）
+    s_scores_raw = await asyncio.to_thread(_sparse_scores, query_sparse, sparse_corpus)
 
     # 归一化向量分数
     v_scores = np.array([r["vector_score"] for r in vector_results])
     v_scores = _minmax_norm(v_scores)
 
-    # 归一化 BM25 分数（全量）
-    b_scores_norm = _minmax_norm(bm25_scores)
+    # 归一化稀疏分数（全量）
+    s_scores_norm = _minmax_norm(s_scores_raw)
 
     # 融合
     fused: dict[int, dict] = {}
     for i, r in enumerate(vector_results):
-        # 找到该条在全量 metadata 中的原始 index
         orig_idx = _find_idx(metadata, r)
-        bm25_s = float(b_scores_norm[orig_idx])
+        s_s = float(s_scores_norm[orig_idx])
         v_s = float(v_scores[i])
         fused[orig_idx] = {
             **r,
             "vector_score": v_s,
-            "bm25_score": bm25_s,
-            "fused_score": settings.vector_weight * v_s + settings.bm25_weight * bm25_s,
+            "sparse_score": s_s,
+            "fused_score": settings.dense_weight * v_s + settings.sparse_weight * s_s,
         }
 
-    # 对未出现在向量结果中但 BM25 top-k 的条目补充进来
-    top_bm25_idx = np.argsort(b_scores_norm)[::-1][:candidate_k]
-    for idx in top_bm25_idx:
+    # 对未出现在向量结果中但稀疏 top-k 的条目补充进来
+    top_sparse_idx = np.argsort(s_scores_norm)[::-1][:candidate_k]
+    for idx in top_sparse_idx:
         if idx not in fused:
-            bm25_s = float(b_scores_norm[idx])
+            s_s = float(s_scores_norm[idx])
             fused[idx] = {
                 **metadata[idx],
                 "vector_score": 0.0,
-                "bm25_score": bm25_s,
-                "fused_score": settings.bm25_weight * bm25_s,
+                "sparse_score": s_s,
+                "fused_score": settings.sparse_weight * s_s,
             }
 
     ranked = sorted(fused.values(), key=lambda x: x["fused_score"], reverse=True)
     return ranked[:k]
-
-
-def _bm25_scores(bm25: BM25Okapi, query: str) -> np.ndarray:
-    tokens = _tokenize(query)
-    return np.array(bm25.get_scores(tokens), dtype=np.float32)
 
 
 def _minmax_norm(arr: np.ndarray) -> np.ndarray:

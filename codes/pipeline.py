@@ -108,14 +108,18 @@ async def node_generate_draft(state: TicketState) -> dict:
         _t("node_generate_draft (high-conf translate)", _start)
         return {"draft_zh": draft_zh, "_step": "draft_generated"}
 
-    messages = prompts.generate_draft_zh(
+    # 按意图类型路由到专用 Agent
+    intent = state.get("intent", "未知")
+    prompt_fn = _DRAFT_PROMPT_MAP.get(intent, prompts.generate_draft_zh_unknown)
+
+    messages = prompt_fn(
         question_zh=state["question_zh"],
-        intent=state["intent"],
+        intent=intent,
         similar_cases=state["similar_cases"],
         conversation_history=state.get("conversation_history"),
     )
     draft_zh = await llm.chat(messages)
-    _t("node_generate_draft", _start)
+    _t(f"node_generate_draft [{intent}]", _start)
     return {"draft_zh": draft_zh, "_step": "draft_generated"}
 
 
@@ -194,6 +198,15 @@ _FOLLOWUP_TYPE_ZH_MAP: dict[str, str] = {
     "問題未解決": "问题未解决",
     "新問題":     "新问题",
     "確認":       "确认",
+}
+
+# 意图 → 专用草稿生成 Agent 路由表
+_DRAFT_PROMPT_MAP: dict[str, Any] = {
+    "故障问题":  prompts.generate_draft_zh_fault,
+    "购买问题":  prompts.generate_draft_zh_purchase,
+    "意见建议":  prompts.generate_draft_zh_feedback,
+    "数据继承":  prompts.generate_draft_zh_data_migration,
+    "未知":      prompts.generate_draft_zh_unknown,
 }
 
 

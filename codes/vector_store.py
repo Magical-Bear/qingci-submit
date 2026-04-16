@@ -18,7 +18,7 @@ import pandas as pd
 from codes.config import (
     DATASET_DIR,
     FAISS_INDEX_PATH,
-    BM25_PATH,
+    SPARSE_PATH,
     METADATA_PATH,
     INDEX_DIR,
 )
@@ -26,17 +26,17 @@ from codes.embedding import encode_sync
 
 
 def build_index(csv_path: Optional[str] = None, force: bool = False) -> None:
-    """从 train.csv 构建 FAISS 索引、BM25 索引、metadata 并落盘。
+    """从 train.csv 构建 FAISS 索引、bge-m3 稀疏向量索引、metadata 并落盘。
 
     已存在的文件默认跳过，force=True 强制重建所有文件。
     """
     INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
     need_faiss = force or not FAISS_INDEX_PATH.exists()
-    need_bm25 = force or not BM25_PATH.exists()
+    need_sparse = force or not SPARSE_PATH.exists()
     need_meta = force or not METADATA_PATH.exists()
 
-    if not (need_faiss or need_bm25 or need_meta):
+    if not (need_faiss or need_sparse or need_meta):
         print("所有索引文件已存在，跳过构建。使用 force=True 强制重建。")
         return
 
@@ -56,15 +56,18 @@ def build_index(csv_path: Optional[str] = None, force: bool = False) -> None:
     else:
         print("metadata 已存在，跳过。")
 
-    # ---- BM25 ----
-    if need_bm25:
-        from codes.retriever import build_bm25, save_bm25
-        print(f"构建 BM25 索引 ({len(questions)} 条)...")
-        bm25 = build_bm25(questions)
-        save_bm25(bm25)
-        print(f"BM25 索引已保存: {BM25_PATH}")
+    # ---- 稀疏向量 (bge-m3 sparse_linear) ----
+    if need_sparse:
+        from codes.embedding import encode_sparse_sync
+        print(f"构建 bge-m3 稀疏向量索引 ({len(questions)} 条)...")
+        sparse_vecs: list[dict] = []
+        for i in range(0, len(questions), 64):
+            sparse_vecs.extend(encode_sparse_sync(questions[i: i + 64], batch_size=64))
+        with open(SPARSE_PATH, "wb") as f:
+            pickle.dump(sparse_vecs, f)
+        print(f"稀疏向量索引已保存: {SPARSE_PATH} ({len(sparse_vecs)} 条)")
     else:
-        print("BM25 索引已存在，跳过。")
+        print("稀疏向量索引已存在，跳过。")
 
     # ---- FAISS ----
     if need_faiss:
