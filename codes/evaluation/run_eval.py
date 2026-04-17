@@ -25,8 +25,8 @@ from codes.evaluation.metrics import compute_all
 from codes.llm import chat
 
 # ==================== 用户可配置常量 ====================
-extract_nums = 2  # 从 eval.csv 抽取评测的条数
-submit_nums = 2 # 给大模型评估的最好/最差翻译片段数量
+extract_nums = 20  # 从 eval.csv 抽取评测的条数
+submit_nums = 4 # 给大模型评估的最好/最差翻译片段数量
 
 # ==================== 其他常量 ====================
 RANDOM_SEED = 42
