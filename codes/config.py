@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     kimi_api_key: str = os.getenv("KIMI_API_KEY")
     kimi_base_url: str = os.getenv("KIMI_BASE_URL")
     kimi_model: str = os.getenv("KIMI_MODEL", "kimi-k2.5")
+    report_model: str = os.getenv("REPORT_MODEL", "")
 
     top_k: int = 3
     sparse_weight: float = 0.3

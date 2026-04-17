@@ -224,18 +224,70 @@ curl -X POST http://localhost:8000/api/ticket/followup \
 
 ## 评测方案
 
-逐条读取 `eval.csv` → 调用 FastAPI → 获取生成回复 → 保存到 `response.csv`
+逐条读取 `eval.csv` → 调用 FastAPI → 获取生成回复 → 计算三项指标
 
-三项指标：
-- **Rouge-1 F1**：词级别召回
-- **BLEU**（fugashi 分词）：n-gram 精确度
-- **语义相似度**：bge-m3 cosine
+| 指标 | 说明 |
+|------|------|
+| Rouge-1 F1 | 词级别召回，衡量关键词覆盖 |
+| BLEU（fugashi 分词） | n-gram 精确度，衡量局部短语匹配 |
+| 语义相似度 | bge-m3 cosine，衡量语义层面的对齐 |
 
-输出列：`mail_id, question, ground_truth, generated_ja, draft_zh, intent_pred, intent_actual, rouge1_f1, bleu, semantic_sim`
+### 运行评测（run_eval）
 
-## 注意事项
+> 前提：服务已启动（`uv run uvicorn codes.service.app:app --reload`）
 
-- 不要读取 `weights/` 文件夹的内容，只引用路径
-- 不要读取 `chat_history/` 文件夹
-- 可以使用 `train.csv` 前 100 行做测试数据
-- 翻译出的日语必须符合日本商务礼仪（敬語、謝罪表現、定型文）
+```bash
+uv run python codes/evaluation/run_eval.py
+```
+
+可配置参数（直接编辑 `run_eval.py` 顶部常量）：
+
+| 常量 | 默认值 | 说明 |
+|------|--------|------|
+| `extract_nums` | `10` | 从 `eval.csv` 随机抽取的评测条数 |
+| `submit_nums` | `4` | 送给大模型做质量总结的最高/最低分样本数 |
+| `RANDOM_SEED` | `42` | 随机种子，保证复现 |
+| `CONCURRENCY` | `3` | 并发请求数 |
+
+报告输出至 `report/evals/eval_<timestamp>.html` 和 `.json`，HTML 包含：
+- **整体指标卡片**：Rouge-1、BLEU、语义相似度、各接口平均延迟（`/new` / `/followup` / `/finalize` 分别统计）
+- **大模型质量评估**：Kimi 对高分/低分样本的中文分析
+- **详细结果表格**：每轮对话可展开查看原文、中文草稿、生成回复与标准回复对比
+
+### 接口测试（test）
+
+单元层面通过 pytest 验证指标计算：
+
+```bash
+uv run pytest codes/evaluation/ -v
+```
+
+端到端接口测试（服务需运行中）：
+
+```bash
+# 健康检查
+curl http://localhost:8000/api/health
+
+# 新工单（返回 session_id + 中文草稿）
+curl -X POST http://localhost:8000/api/ticket/new \
+  -H "Content-Type: application/json" \
+  -d '{"question": "アプリが起動しません。iPhone 14、iOS 17です。"}'
+
+# 客服确认草稿（返回日语正式回复）
+curl -X POST http://localhost:8000/api/ticket/finalize \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "<uuid>", "draft_zh": "您好，感谢您的反馈，我们正在调查..."}'
+
+# 玩家追加消息（多轮）
+curl -X POST http://localhost:8000/api/ticket/followup \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "<uuid>", "message": "再起動しても直りません。"}'
+
+# 查看完整会话历史
+curl http://localhost:8000/api/session/<uuid>
+```
+
+## 项目思维链
+
+详见 [logical_reasoning.md](logical_reasoning.md)
+

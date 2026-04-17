@@ -23,12 +23,13 @@ def get_client() -> AsyncOpenAI:
 )
 async def chat(
     messages: list[dict],
-    max_tokens: int = 2048,
+    max_tokens: int = 1000000,
+    model: str | None = None,
 ) -> str:
     """调用 Kimi API，返回 content 字符串。注意: kimi-k2.5 只支持 temperature=1"""
     client = get_client()
     resp = await client.chat.completions.create(
-        model=settings.kimi_model,
+        model=model or settings.report_model or settings.kimi_model,
         messages=messages,
         temperature=1,   # kimi-k2.5 仅支持 temperature=1
         max_tokens=max_tokens,

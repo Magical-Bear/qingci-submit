@@ -101,6 +101,19 @@ async def node_retrieve(state: TicketState) -> dict:
 
 async def node_generate_draft(state: TicketState) -> dict:
     _start = time.perf_counter()
+
+    # 追加消息为"確認"类型：玩家确认问题已解决，生成感谢收尾
+    if state.get("followup_type") in ("確認", "确认"):
+        messages = prompts.generate_draft_zh_confirmation(
+            question_zh=state.get("followup_zh") or state.get("question_zh", ""),
+            intent=state.get("intent", "未知"),
+            similar_cases=state.get("similar_cases", []),
+            conversation_history=state.get("conversation_history"),
+        )
+        draft_zh = await llm.chat(messages)
+        _t("node_generate_draft [確認]", _start)
+        return {"draft_zh": draft_zh, "_step": "draft_generated"}
+
     # 高置信直接用历史回复翻成中文草稿，跳过 LLM 生成
     if state.get("confidence") == "high":
         top_case = state["similar_cases"][0]
@@ -113,7 +126,7 @@ async def node_generate_draft(state: TicketState) -> dict:
     prompt_fn = _DRAFT_PROMPT_MAP.get(intent, prompts.generate_draft_zh_unknown)
 
     messages = prompt_fn(
-        question_zh=state["question_zh"],
+        question_zh=state.get("followup_zh") or state["question_zh"],
         intent=intent,
         similar_cases=state["similar_cases"],
         conversation_history=state.get("conversation_history"),
@@ -207,6 +220,8 @@ _DRAFT_PROMPT_MAP: dict[str, Any] = {
     "意见建议":  prompts.generate_draft_zh_feedback,
     "数据继承":  prompts.generate_draft_zh_data_migration,
     "未知":      prompts.generate_draft_zh_unknown,
+    "確認":      prompts.generate_draft_zh_confirmation,
+    "确认":      prompts.generate_draft_zh_confirmation,
 }
 
 

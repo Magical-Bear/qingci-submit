@@ -3,11 +3,45 @@
 4 个节点：日→中翻译、意图分类、中文草稿生成(RAG)、中→日敬语翻译
 多智能体：按意图类型路由到专用草稿生成 Agent
 """
+from __future__ import annotations
+import json
+from pathlib import Path
 
 SYSTEM_CS = """\
 あなたは日本のゲーム「ぽちゃガチョ！」のカスタマーサポートシステムです。
 中国語サポートチームが日本人プレイヤーにサービスを提供しています。
 """
+
+# ---------- 术语库加载 ----------
+
+_GLOSSARY_PATH = Path(__file__).parent.parent / "data" / "glossary.json"
+
+def _load_glossary() -> dict[str, str]:
+    """加载并合并所有分类的术语，返回 {中文: 日文} 扁平字典"""
+    with open(_GLOSSARY_PATH, encoding="utf-8") as f:
+        raw = json.load(f)
+    merged: dict[str, str] = {}
+    for key, val in raw.items():
+        if key.startswith("_"):
+            continue
+        if isinstance(val, dict):
+            merged.update(val)
+    return merged
+
+_GLOSSARY: dict[str, str] = _load_glossary()
+
+
+def _build_glossary_snippet(text: str) -> str:
+    """
+    从文本中检测出现的术语，返回精简的 JSON 映射字符串注入 Prompt。
+    只注入实际出现的词条，避免 Prompt 过长。
+    """
+    hits = {zh: ja for zh, ja in _GLOSSARY.items() if zh in text}
+    if not hits:
+        return ""
+    return "\n翻译时必须严格遵守以下游戏专属术语映射（中文→日文）：\n" + json.dumps(
+        hits, ensure_ascii=False
+    )
 
 
 # ---------- 1. 日→中翻译 ----------
@@ -96,16 +130,35 @@ def generate_draft_zh(
 
 # ---------- 4. 中→日敬语翻译 ----------
 
+_STANDARD_OPENING = "いつもご利用いただきありがとうございます。\n『ぽちゃガチョ！』サポート担当です。"
+_STANDARD_CLOSING = "今後とも『ぽちゃガチョ！』をよろしくお願いいたします。\n※本メール内容の無断掲載、無断複製、転送はお控えください。"
+
+# 敬语层级指引：按工单情境校准礼貌程度
+_KEIGO_GUIDE = (
+    "敬語レベルの指針：\n"
+    "- 一般的な問い合わせ：丁寧語（〜ます・〜です体）を基本とし、過剰な謝罪表現を避ける\n"
+    "- 故障・不具合：「誠に申し訳ございません」「大変ご不便をおかけしております」など謙譲語を使用\n"
+    "- クレーム・購入問題：「深くお詫び申し上げます」「心よりお詫び申し上げます」など最高位の謝罪表現\n"
+    "- 感謝・確認：「ありがとうございます」「承りました」程度で充分、過剰な謝罪は不自然\n"
+    "- 解決案内時：「〜していただけますでしょうか」「〜をお試しください」など丁寧な依頼形\n"
+    "自然な日本語客服表現を心がけ、中国語を直訳した不自然な表現（例：「問題について心より感謝」）は避けること。"
+)
+
 def translate_zh_to_ja_polite(text_zh: str) -> list[dict]:
+    glossary_snippet = _build_glossary_snippet(text_zh)
+    system_content = (
+        "あなたはプロの日本語客服翻訳者です。中国語のカスタマーサポート返信を、"
+        "自然で礼儀正しい日本語に翻訳してください。\n"
+        f"{_KEIGO_GUIDE}\n"
+        "必ず以下の形式で出力してください：\n"
+        f"1. 冒頭に必ず次の定型文を入れる：\n{_STANDARD_OPENING}\n"
+        "2. 本文を翻訳する（内容に応じた適切な敬語レベルで）\n"
+        f"3. 末尾に必ず次の定型文を入れる：\n{_STANDARD_CLOSING}\n"
+        "翻訳のみ出力し、説明や追加コメントは不要です。"
+        f"{glossary_snippet}"
+    )
     return [
-        {
-            "role": "system",
-            "content": (
-                "あなたはプロの翻訳者です。中国語のカスタマーサポート返信を、"
-                "丁寧で礼儀正しい日本語（敬語・謝罪表現・定型文を含む）に翻訳してください。"
-                "翻訳のみ出力し、説明は不要です。"
-            ),
-        },
+        {"role": "system", "content": system_content},
         {"role": "user", "content": text_zh},
     ]
 
@@ -182,12 +235,13 @@ def generate_draft_zh_fault(
     system_prompt = (
         "你是专业的游戏客服助手（ぽちゃガチョ！），负责处理【故障问题】工单。\n"
         "处理策略：\n"
-        "1. 首先向玩家道歉并感谢反馈\n"
-        "2. 根据参考案例，提供具体的故障排查步骤（重启应用、清缓存、重装等）\n"
-        "3. 如参考案例未涵盖，礼貌询问设备信息（OS版本、设备型号、应用版本号）\n"
-        "4. 说明技术团队正在调查，给出合理预期时间\n"
-        "5. 回复友好专业，控制在150字以内\n"
-        "6. 只输出回复草稿正文，不要标题或说明\n"
+        "1. 首先真诚道歉并感谢玩家反馈，用「非常抱歉给您带来不便」等共情语言\n"
+        "2. 说明正在认真调查此问题，体现对玩家的重视\n"
+        "3. 根据参考案例，提供具体的故障排查步骤（重启应用、清缓存、重装等）\n"
+        "4. 如参考案例未涵盖，礼貌询问设备信息（OS版本、设备型号、应用版本号）\n"
+        "5. 说明技术团队正在调查，给出合理预期时间\n"
+        "6. 回复友好专业，控制在200字以内\n"
+        "7. 只输出回复草稿正文，不要标题或说明\n"
         f"当前工单意图类型：{intent}"
     )
     return _build_messages(
@@ -206,12 +260,13 @@ def generate_draft_zh_purchase(
     system_prompt = (
         "你是专业的游戏客服助手（ぽちゃガチョ！），负责处理【购买问题】工单。\n"
         "处理策略：\n"
-        "1. 道歉并表示理解玩家的不便\n"
+        "1. 真诚道歉并充分表示理解玩家的不便与焦虑，先共情后处理\n"
         "2. 告知将核查购买记录，如未提供请礼貌要求订单号或截图\n"
         "3. 参考案例中的补偿/处理方式，给出明确承诺和时间节点\n"
         "4. 说明退款或补发道具的流程和预计完成时间\n"
-        "5. 回复专业且有保证感，控制在150字以内\n"
-        "6. 只输出回复草稿正文，不要标题或说明\n"
+        "5. 再次致歉，感谢玩家耐心等待\n"
+        "6. 回复专业且有保证感，控制在200字以内\n"
+        "7. 只输出回复草稿正文，不要标题或说明\n"
         f"当前工单意图类型：{intent}"
     )
     return _build_messages(
@@ -284,6 +339,30 @@ def generate_draft_zh_unknown(
         "3. 如意图不明，礼貌请求玩家补充问题详情\n"
         "4. 只输出回复草稿正文，不要加标题或说明\n"
         f"5. 本次工单意图类型：{intent}"
+    )
+    return _build_messages(
+        system_prompt, question_zh,
+        _build_cases_text(similar_cases), conversation_history,
+    )
+
+
+def generate_draft_zh_confirmation(
+    question_zh: str,
+    intent: str,
+    similar_cases: list[dict],
+    conversation_history: list[dict] | None = None,
+) -> list[dict]:
+    """确认类追加消息 Agent：玩家确认问题已解决，生成简短感谢收尾回复"""
+    system_prompt = (
+        "你是专业的游戏客服助手（ぽちゃガチョ！），帮助中国客服团队起草中文回复草稿。\n"
+        "玩家已确认问题解决或已找到所需内容，请生成简短的感谢收尾回复。\n"
+        "要求：\n"
+        "1. 感谢玩家及时反馈，表示很高兴问题得到解决\n"
+        "2. 如有必要可简短总结解决方案（如物品在哪个分类找到了）\n"
+        "3. 欢迎玩家今后继续反馈，保持愉快的客服体验\n"
+        "4. 回复简洁温暖，控制在80字以内\n"
+        "5. 只输出回复草稿正文，不要加标题或说明\n"
+        f"当前工单意图类型：{intent}"
     )
     return _build_messages(
         system_prompt, question_zh,
