@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang='zh-CN'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>客服系统评估报告 - 20260417_095852</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; color: #333; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; color: #2c3e50; }
+        .meta { text-align: center; color: #666; margin-bottom: 30px; font-size: 14px; }
+        .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        .card h3 { font-size: 14px; color: #666; margin-bottom: 10px; }
+        .card .value { font-size: 28px; font-weight: bold; color: #2c3e50; }
+        .card .unit { font-size: 12px; color: #999; }
+        .llm-summary { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .llm-summary h2 { margin-bottom: 15px; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .llm-summary pre { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; line-height: 1.8; color: #444; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
+        th { background: #34495e; color: white; padding: 12px 8px; text-align: left; font-weight: 600; font-size: 13px; }
+        td { padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: top; font-size: 13px; }
+        tr:hover { background: #f8f9fa; }
+        .round-header { background: #ecf0f1; font-weight: bold; }
+        .round-sub { background: #fafafa; }
+        .mail-id { font-family: monospace; color: #3498db; font-size: 12px; }
+        .type-tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; background: #e74c3c; color: white; }
+        .ja-text { color: #2c3e50; max-width: 300px; overflow: hidden; text-overflow: ellipsis; }
+        .zh-text { color: #27ae60; max-width: 250px; overflow: hidden; text-overflow: ellipsis; }
+        .reply-text { color: #8e44ad; max-width: 300px; overflow: hidden; text-overflow: ellipsis; }
+        .score { font-weight: bold; font-family: monospace; }
+        .score.high { color: #27ae60; }
+        .score.medium { color: #f39c12; }
+        .score.low { color: #e74c3c; }
+        .latency { color: #7f8c8d; font-size: 12px; }
+        .round-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; background: #95a5a6; color: white; margin-right: 5px; }
+        .expand-btn { cursor: pointer; color: #3498db; font-size: 11px; }
+        .full-text { display: none; margin-top: 5px; padding: 8px; background: #f8f9fa; border-radius: 4px; font-size: 12px; white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
+        .full-text.show { display: block; }
+    </style>
+    <script>
+        function toggleText(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('show');
+        }
+    </script>
+</head>
+<body>
+    <div class='container'>
+        <h1>ぽちゃガチョ！客服系统评估报告</h1>
+        <div class='meta'>生成时间: 2026-04-17T09:58:52.955285 | 样本数: 5 | 随机种子: 42</div>
+
+        <div class='summary-cards'>
+            <div class='card'><h3>Rouge-1 F1</h3><div class='value'>0.3107</div></div>
+            <div class='card'><h3>BLEU</h3><div class='value'>0.1946</div></div>
+            <div class='card'><h3>语义相似度</h3><div class='value'>0.6782</div></div>
+            <div class='card'><h3>平均延迟</h3><div class='value'>89366<span class='unit'>ms</span></div></div>
+        </div>
+
+        <div class='llm-summary'>
+            <h2>大模型质量评估</h2>
+            <pre>基于提供的样本数据及指标分析，现从专业角度对日语客服翻译质量进行综合评估如下：
+
+## 1. 整体质量评价（高得分样本的共同优点）
+
+**核心优势体现在术语准确性与基础礼貌规范：**
+- **游戏术语翻译精准**：系统能准确将中文草稿中的专业词汇转换为日语游戏界面的标准用语，如「零件」→「パーツ」、「发射器」→「ランチャー」、「背包」→「リュック/バックパック」，体现出对游戏领域术语的掌握。
+- **解决方案传达清晰**：在技术问题解决类咨询（如iOS显示模式切换、物品查找路径指引）中，系统回复能完整保留中文草稿中的操作步骤逻辑，确保用户可执行性。
+- **基础敬语体系完整**：高频正确使用「ございます」「申し訳ございません」「承りました」等郑重语，维持了客服场景所需的礼貌基调（丁寧語/尊敬語）。
+
+## 2. 主要问题分析（低得分样本的共性问题）
+
+**结构性缺失与上下文处理能力不足是主要失分点：**
+
+- **标准开场白缺失（品牌一致性差）**：所有系统回复均缺少标准回复中的固定开头「いつもご利用いただきありがとうございます。『ぽちゃガチョ！』サポート担当です。」，直接切入问题处理，虽然简洁但损失了品牌服务的标准化与温度感，这是导致Rouge-1/BLEU分数偏低（0.31/0.19）的关键原因。
+
+- **多轮对话上下文断裂（严重技术缺陷）**：mail_id: 1064的第2轮对话中，**系统回复完全为空**（用户已确认「ランチャーの方に入っていました」后无响应）。这暴露出在多轮交互场景下，系统未能维持对话状态（Context Maintenance）和生成后续回复的能力，属于功能性缺陷。
+
+- **安抚性语句过度精简**：对比标准回复，系统回复往往省略了「深くお詫び申し上げます」「ご丁寧にお礼のご連絡をくださりありがとうございます」等情感安抚表达，过于侧重解决方案而弱化共情（Empathy），在日语客服文化中显得生硬。
+
+- **响应延迟过高**：平均89.4秒的延迟严重影响实时客服体验，虽非翻译质量问题，但会放大用户对翻译准确性的负面感知。
+
+## 3. 改进建议（针对准确性与礼貌性）
+
+**A. 格式标准化（Format Compliance）**
+- **强制模板前置**：在生成逻辑中加入固定开头模板「いつもご利用いただきありがとうございます。『ぽちゃガチョ！』サポート担当です。」，确保品牌一致性，此举可显著提升ROUGE-1分数。
+
+**B. 敬语层级统一（Keigo Optimization）**
+- **维持最高敬语级别**：当前部分回复使用「しております」（谦语）而非「しております」（郑重语连续体），建议统一采用「～ております・～でございます」体系，并在结尾加入「ご確認のほど、よろしくお願いいたします」等标准结尾句，提升礼仪完整性。
+
+**C. 情感补偿机制（Empathy Augmentation）**
+- **增加道歉强度词汇库**：针对故障类咨询（不具合について），在译文开头加入「誠に」「深く」等程度副词修饰道歉语，并补充「お客様のお気持ちを察し、大変心苦しく存じます」等共情语句，再进入解决方案说明，符合日本客服"先情后理"（先共情后解决）的沟通逻辑。
+
+**D. 术语一致性校验**
+- **建立游戏术语词典**：确保「背包」统一译为「リュック」（而非バックパック混用）、「广告」统一为「広告」（而非CM），避免因用词波动导致的BLEU分数损失。
+
+## 4. 多轮对话处理效果评价
+
+**当前表现：不合格（Critical Failure）**
+
+- **状态记忆失效**：mail_id: 1064案例显示，在第2轮用户反馈已找到物品（「ランチャーの方に入っていました」）后，系统未能生成确认回复（如「ご確認いただきありがとうございます。無事にお見つかりましたようで安心いたしました」），而是输出空值。这表明系统缺乏**对话历史编码（Dialogue History Encoding）**能力。
+
+- **指代消解困难**：当用户使用省略主语的日语（如「ランチャーの方に入っていました」）时，系统未能将其与首轮提到的「バッグ内のアイテム」建立指代关联</pre>
+        </div>
+
+        <h2 style='margin-bottom: 15px; color: #2c3e50;'>详细评估结果</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mail ID</th>
+                    <th>类型</th>
+                    <th>用户问题 (JA)</th>
+                    <th>中文翻译</th>
+                    <th>系统回复 / 标准回复</th>
+                    <th>延迟</th>
+                    <th>Rouge-1</th>
+                    <th>BLEU</th>
+                    <th>语义相似</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class='round-header'>
+                    <td rowspan='1' class='mail-id'>562</td>
+                    <td rowspan='1'><span class='type-tag'>アイテム購入時に問題が発生した</span></td>
+                    <td>
+                        <span class='round-badge'>R1</span>
+                        <div class='ja-text' title='お問い合わせ
+アカウントID : 
+
+
+アプリバージョン : 
+ご利用のOSバージョン : iOS最新
+ご利用端末名 : iPhone14
+お問い合わせ内容の種類 : アイテム購入時に問題が発生した
+ご利用環境 : iOS
+問題が発生した日時 : 2024-03-02 12:00
+メールアドレス : 
+お問い合わせ内容 ：購入したものが反映されない
+添付ファイル ：'>お問い合わせ
+アカウントID : 
+
+
+アプリバージョン : 
+ご利用のOSバージョン : iOS最...</div>
+                        <span class='expand-btn' onclick="toggleText('ja_562_1')">[展开]</span>
+                        <div id='ja_562_1' class='full-text'>お問い合わせ
+アカウントID : 
+
+
+アプリバージョン : 
+ご利用のOSバージョン : iOS最新
+ご利用端末名 : iPhone14
+お問い合わせ内容の種類 : アイテム購入時に問題が発生した
+ご利用環境 : iOS
+問題が発生した日時 : 2024-03-02 12:00
+メールアドレス : 
+お問い合わせ内容 ：購入したものが反映されない
+添付ファイル ：</div>
+                    </td>
+                    <td>
+                        <div class='zh-text'>非常抱歉给您带来不便。您反馈的3月2日12:00购买未到账问题，系当日11:00...</div>
+                        <span class='expand-btn' onclick="toggleText('zh_562_1')">[展开]</span>
+                        <div id='zh_562_1' class='full-text'>非常抱歉给您带来不便。您反馈的3月2日12:00购买未到账问题，系当日11:00-14:00 App Store故障所致。目前系统已自动补发道具，请重启应用查看。如仍未到账，请提供Apple订单号，我们将在24小时内核查并补发或退款。再次致歉，感谢您的耐心。</div>
+                    </td>
+                    <td>
+                        <div class='reply-text'><b>生成:</b> ご不便をおかけし、大変申し訳ございません。
+3月2日12:00にご購入いただきましたアイテムが反映さ...</div>
+                        <span class='expand-btn' onclick="toggleText('reply_562_1')">[展开]</span>
+                        <div id='reply_562_1' class='full-text'><b>生成:</b> ご不便をおかけし、大変申し訳ございません。
+3月2日12:00にご購入いただきましたアイテムが反映されないとのご連絡を承りましたが、こちらは当日11:00～14:00に発生いたしましたApp Storeのシステム障害によるものでございました。
+
+現在、システムにて自動で該当アイテムを補填させていただいておりますので、アプリを再起動の上、ご確認をお願いいたします。
+
+万が一、まだ反映されていない場合は、Appleの注文番号をご提供いただけますと幸いです。24時間以内に調査の上、補填または返金対応をさせていただきます。
+
+お待たせいたしましたこと、重ねて深くお詫び申し上げますとともに、ご理解とご協力を賜り厚く御礼申し上げます。
+
+<b>标准:</b> いつもご利用いただきありがとうございます。
+『ぽちゃガチョ！』サポート担当です。
+お客様にご迷惑をおかけし、誠に申し訳ございません。
+お問い合わせいただきました件につきましては、【3/2（土）11:00 ～ 14:00】頃にApp Storeの障害が原因で有償アイテム購入時にエラーメッセージが表示され、アイテムが購入できない、または購入したアイテムが反映されない不具合が発生しておりました。
+現在、該当の現象は解消され、正常にご購入いただけます。
+また、反映されていなかったアイテムについては、すでにお客様のアカウントに付与されておりますが、反映されていない場合は一度アプリを終了のうえ、再起動させることで反映されます。
+重ねてのご案内となりますが、このたびはご迷惑をおかけして大変申し訳ございませんでした。
+今後とも『ぽちゃガチョ！』をよろしくお願いいたします。
+※本メール内容の無断掲載、無断複製、転送はお控えください。</div>
+                    </td>
+                    <td class='latency'>78708ms</td>
+                    <td><span class='score high'>0.8000</span></td>
+                    <td><span class='score low'>0.2945</span></td>
+                    <td><span class='score high'>0.7842</span></td>
+                </tr>
+                <tr class='round-header'>
+                    <td rowspan='1' class='mail-id'>896</td>
+                    <td rowspan='1'><span class='type-tag'>不具合について</span></td>
+                    <td>
+                        <span class='round-badge'>R1</span>
+                        <div class='ja-text' title='お問い合わせ
+アカウントID : 
+
+
+アプリバージョン : 1.1.1
+ご利用のOSバージョン : 
+ご利用端末名 : iPhone12mini
+お問い合わせ内容の種類 : 不具合について
+ご利用環境 : iOS
+問題が発生した日時 : 2024-03-03 00:45
+メールアドレス : 
+お問い合わせ内容 ：リュックに入れたアイテムが消えた。
+添付ファイル ：'>お問い合わせ
+アカウントID : 
+
+
+アプリバージョン : 1.1.1
+ご利用のOSバージョン :...</div>
+                        <span class='expand-btn' onclick="toggleText('ja_896_1')">[展开]</span>
+                        <div id='ja_896_1' class='full-text'>お問い合わせ
+アカウントID : 
+
+
+アプリバージョン : 1.1.1
+ご利用のOSバージョン : 
+ご利用端末名 : iPhone12mini
+お問い合わせ内容の種類 : 不具合について
+ご利用環境 : iOS
+問題が発生した日時 : 2024-03-03 00:45
+メールアドレス : 
+お問い合わせ内容 ：リュックに入れたアイテムが消えた。
+添付ファイル ：</div>
+                    </td>
+                    <td>
+                        <div class='zh-text'>抱歉给您带来困扰！背包物品可能收纳在「零件」或「发射器」栏，请优先检查这两个分类...</div>
+                        <span class='expand-btn' onclick="toggleText('zh_896_1')">[展开]</span>
+                        <div id='zh_896_1' class='full-text'>抱歉给您带来困扰！背包物品可能收纳在「零件」或「发射器」栏，请优先检查这两个分类。若仍未找到，请尝试重启应用或清除缓存。为便于排查，请告知您的iOS系统版本。技术团队正在紧急核查此类问题，预计3-5个工作日内反馈。感谢您的耐心！</div>
+                    </td>
+                    <td>
+                        <div class='reply-text'><b>生成:</b> ご不便をおかけしております。バッグ内のアイテムは「パーツ」または「ランチャー」欄に格納されている可能...</div>
+                        <span class='expand-btn' onclick="toggleText('reply_896_1')">[展开]</span>
+                        <div id='reply_896_1' class='full-text'><b>生成:</b> ご不便をおかけしております。バッグ内のアイテムは「パーツ」または「ランチャー」欄に格納されている可能性がございます。まずはこの2つのカテゴリをご確認ください。それでも見つからない場合は、アプリの再起動またはキャッシュのクリアをお試しください。
+
+原因を特定するため、お使いのiOSのバージョンをお教えいただけますでしょうか。
+
+なお、技術チームにおいて本件を緊急で調査しております。3～5営業日以内にご連絡させていただきます。
+
+お待ちいただきましてありがとうございます。
+
+<b>标准:</b> いつもご利用いただきありがとうございます。
+『ぽちゃガチョ！』サポート担当です。
+お問い合わせいただきました件について、ご案内いたします。
+リュックへアイテムやピースを入れた場合、「パーツ」欄もしくは「ランチャー」欄に収納されます。
+そのため、既にご確認いただいておりましたら申し訳ございませんが、あらためてリュック内をご確認いただけますと幸いです。
+ご確認いただいたうえで問題が解決しない場合、お手数ですが「リュック」内の「パーツ」「ランチャー」欄のスクリーンショットをお送りを添付のうえ、再度お問い合わせいただけないでしょうか。
+今後とも『ぽちゃガチョ！』をよろしくお願いいたします。
+※本メール内容の無断掲載、無断複製、転送はお控えください。</div>
+                    </td>
+                    <td class='latency'>100517ms</td>
+                    <td><span class='score low'>0.0000</span></td>
+                    <td><span class='score low'>0.2081</span></td>
+                    <td><span class='score high'>0.7334</span></td>
+                </tr>
+                <tr class='round-header'>
+                    <td rowspan='1' class='mail-id'>2585</td>
+                    <td rowspan='1'><span class='type-tag'>不具合について</span></td>
+                    <td>
+                        <span class='round-badge'>R1</span>
+                        <div class='ja-text' title='お問い合わせ
+アカウントID : 
+
+プレイヤー名 : 
+アプリバージョン : 
+ご利用のOSバージョン : 
+ご利用端末名 : iPhone15
+お問い合わせ内容の種類 : 不具合について
+ご利用環境 : iOS
+問題が発生した日時 : 2024-03-20 00:00
+メールアドレス : 
+お問い合わせ内容 ：広告を見てのエネルギーチャージ、アイテムの取得など、広告のボタンをタップしても映像ではなく静止画の広告のみしか表示されず、何秒待っても広告を見たことにならず、報酬を得られません。
+解決法ありますでしょうか。
+添付ファイル ：'>お問い合わせ
+アカウントID : 
+
+プレイヤー名 : 
+アプリバージョン : 
+ご利用のOSバージ...</div>
+                        <span class='expand-btn' onclick="toggleText('ja_2585_1')">[展开]</span>
+                        <div id='ja_2585_1' class='full-text'>お問い合わせ
+アカウントID : 
+
+プレイヤー名 : 
+アプリバージョン : 
+ご利用のOSバージョン : 
+ご利用端末名 : iPhone15
+お問い合わせ内容の種類 : 不具合について
+ご利用環境 : iOS
+問題が発生した日時 : 2024-03-20 00:00
+メールアドレス : 
+お問い合わせ内容 ：広告を見てのエネルギーチャージ、アイテムの取得など、広告のボタンをタップしても映像ではなく静止画の広告のみしか表示されず、何秒待っても広告を見たことにならず、報酬を得られません。
+解決法ありますでしょうか。
+添付ファイル ：</div>
+                    </td>
+                    <td>
+                        <div class='zh-text'>非常抱歉给您带来不便！关于广告无法正常播放的问题，建议尝试以下方法：1.强制关闭...</div>
+                        <span class='expand-btn' onclick="toggleText('zh_2585_1')">[展开]</span>
+                        <div id='zh_2585_1' class='full-text'>非常抱歉给您带来不便！关于广告无法正常播放的问题，建议尝试以下方法：1.强制关闭应用后重新启动；2.检查是否有广告拦截类APP并暂时关闭；3.确认iOS设置中"跟踪"权限已开启。技术团队正在紧急调查此问题，预计需要数日时间修复，修复后将通过游戏内公告通知。感谢您的耐心等待！</div>
+                    </td>
+                    <td>
+                        <div class='reply-text'><b>生成:</b> ご不便をおかけしており、誠に申し訳ございません。広告が正常に再生されない問題に関しまして、以下の方法...</div>
+                        <span class='expand-btn' onclick="toggleText('reply_2585_1')">[展开]</span>
+                        <div id='reply_2585_1' class='full-text'><b>生成:</b> ご不便をおかけしており、誠に申し訳ございません。広告が正常に再生されない問題に関しまして、以下の方法をお試しください。
+1. アプリを強制終了し、再起動していただく
+2. 広告ブロック系アプリがインストールされていないかご確認いただき、一時的に無効化していただく
+3. iOSの設定で「トラッキング」許可がオンになっているかご確認いただく
+
+現在、技術チームにて本件を調査しており、修正には数日程度を要する見込みでございます。修正完了しましたら、ゲーム内お知らせにてご案内申し上げます。
+
+ご理解とご協力を賜り、誠にありがとうございます。
+
+<b>标准:</b> いつもご利用いただきありがとうございます。
+『ぽちゃガチョ！』サポート担当です。
+お問い合わせの問題に対し、返答が遅れておりますこと、
+そしてご迷惑をおかけしておりますことを深くお詫び申し上げます。
+連絡いただいております現象につきましては、お客様からお寄せいただいた情報を元に、調査を行っております。
+迅速な対応に努めてまいりますが、調査完了までお時間を頂戴する場合がございます。
+調査完了後に当窓口よりあらためてお客様へご連絡差し上げますので、今しばらくお待ちくださいますようお願いたします。
+お客様へご不便をおかけしておりますことを重ねてお詫び申し上げます。
+今後とも『ぽちゃガチョ！』をよろしくお願いいたします。
+※本メール内容の無断掲載、無断複製、転送はお控えください。
+いつもご利用いただきありがとうございます。
+『ぽちゃガチョ！』サポート担当です。
+この度はお客様にご迷惑をおかけし、またご案内までにお時間を頂戴し、誠に申し訳ございません。
+お問い合わせいただいております「広告を再生しても報酬を受け取ることができない」件につきましては、現在も調査および確認作業を進めております。
+修正対応を実施する際など、お客様皆様にお伝えできる情報がございましたら、公式X（旧Twitter）やゲーム内でお知らせいたします。
+重ねてのお詫びとなってしましますが、この度の不具合によりご迷惑をおかけしておりますこと、深くお詫び申し上げます。
+今後とも『ぽちゃガチョ！』をよろしくお願いいたします。
+※本メール内容の無断掲載、無断複製、転送はお控えください。
+2024/03/23 20:52:08 QCplay:
+お問い合わせ
+アカウントID :
+プレイヤー名 :
+アプリバージョン :
+ご利用のOSバージョン :
+ご利用端末名 : iPhone15
+お問い合わせ内容の種類 : 不具合について
+ご利用環境 : iOS
+問題が発生した日時 : 2024-03-20 00:00
+メールアドレス :
+お問い合わせ内容 ：広告を見てのエネルギーチャージ、アイテムの取得など、広告のボタンをタップしても映像ではなく静止画の広告のみしか表示されず、何秒待っても広告を見たことにならず、報酬を得られません。
+解決法ありますでしょうか。
+添付ファイル ：</div>
+                    </td>
+                    <td class='latency'>58435ms</td>
+                    <td><span class='score low'>0.0870</span></td>
+                    <td><span class='score low'>0.0264</span></td>
+                    <td><span class='score medium'>0.6975</span></td>
+                </tr>
+                <tr class='round-header'>
+                    <td rowspan='1' class='mail-id'>359</td>
+                    <td rowspan='1'><span class='type-tag'>アイテム購入時に問題が発生した</span></td>
+                    <td>
+                        <span class='round-badge'>R1</span>
+                        <div class='ja-text' title='お問い合わせ
+アカウントID : 
+
+プレイヤー名 : 
+アプリバージョン : 1.1.0
+ご利用のOSバージョン : iOS 16.6.1
+ご利用端末名 : iPhone13Pro
+お問い合わせ内容の種類 : アイテム購入時に問題が発生した
+ご利用環境 : iOS
+問題が発生した日時 : 2024-02-28 17:00
+メールアドレス : 
+お問い合わせ内容 ：課金したいのですが、年齢認定の生年月日が出てこないです。
+画面を触るとスクロールしている音は聞こえるのですが
+数字が見えないため分かりません。
+昨日から何度やっても同じ症状です。
+添付ファイル ：'>お問い合わせ
+アカウントID : 
+
+プレイヤー名 : 
+アプリバージョン : 1.1.0
+ご利用の...</div>
+                        <span class='expand-btn' onclick="toggleText('ja_359_1')">[展开]</span>
+                        <div id='ja_359_1' class='full-text'>お問い合わせ
+アカウントID : 
+
+プレイヤー名 : 
+アプリバージョン : 1.1.0
+ご利用のOSバージョン : iOS 16.6.1
+ご利用端末名 : iPhone13Pro
+お問い合わせ内容の種類 : アイテム購入時に問題が発生した
+ご利用環境 : iOS
+問題が発生した日時 : 2024-02-28 17:00
+メールアドレス : 
+お問い合わせ内容 ：課金したいのですが、年齢認定の生年月日が出てこないです。
+画面を触るとスクロールしている音は聞こえるのですが
+数字が見えないため分かりません。
+昨日から何度やっても同じ症状です。
+添付ファイル ：</div>
+                    </td>
+                    <td>
+                        <div class='zh-text'>非常抱歉给您带来不便。关于购买时年龄认证界面无法显示数字的问题，这可能是iOS显...</div>
+                        <span class='expand-btn' onclick="toggleText('zh_359_1')">[展开]</span>
+                        <div id='zh_359_1' class='full-text'>非常抱歉给您带来不便。关于购买时年龄认证界面无法显示数字的问题，这可能是iOS显示模式导致的。请尝试：前往iPhone"设置"＞"显示与亮度"＞切换为"浅色"模式。
+
+若问题仍未解决，请提供该界面的截图及详细情况，我们将立即核查处理。感谢您的配合。</div>
+                    </td>
+                    <td>
+                        <div class='reply-text'><b>生成:</b> この度はご不便をおかけし、誠に申し訳ございません。
+購入時の年齢認証画面において、数字が表示されない...</div>
+                        <span class='expand-btn' onclick="toggleText('reply_359_1')">[展开]</span>
+                        <div id='reply_359_1' class='full-text'><b>生成:</b> この度はご不便をおかけし、誠に申し訳ございません。
+購入時の年齢認証画面において、数字が表示されない問題につきましては、iOSの表示モードによる影響の可能性がございます。恐れ入りますが、以下の手順で「ライト」モードへの切り替えをお試しください。
+
+iPhone「設定」＞「画面表示と明るさ」＞「ライト」モード
+
+上記の方法でも改善されない場合は、該当画面のスクリーンショットと詳細な状況をご提供いただけますと、速やかに調査・対応させていただきます。ご面倒をおかけしますが、何卒よろしくお願い申し上げます。
+
+<b>标准:</b> いつもご利用いただきありがとうございます。
+『ぽちゃガチョ！』サポート担当です。
+お客様にはご不便をおかけしており、誠に申し訳ございません。
+アイテムご購入時に生年月日が入力できない件について、下記手順で解決する可能性がございます。
+-----
+iPhone固有の「設定」＞「画面表示と明るさ」＞「ライト」へ変更
+-----
+もし上記で解決されない場合は、再度詳細を添えてご返信いただけますでしょうか。
+お手数をおかけいたしますが、ご確認いただけますと幸いです。
+今後とも『ぽちゃガチョ！』をよろしくお願いいたします。
+※本メール内容の無断掲載、無断複製、転送はお控えください。</div>
+                    </td>
+                    <td class='latency'>87494ms</td>
+                    <td><span class='score medium'>0.6667</span></td>
+                    <td><span class='score low'>0.3456</span></td>
+                    <td><span class='score high'>0.7150</span></td>
+                </tr>
+                <tr class='round-header'>
+                    <td rowspan='2' class='mail-id'>1064</td>
+                    <td rowspan='2'><span class='type-tag'>不具合について</span></td>
+                    <td>
+                        <span class='round-badge'>R1</span>
+                        <div class='ja-text' title='お問い合わせ
+アカウントID : 
+
+プレイヤー名 : 
+
+ご利用のOSバージョン : Android13
+ご利用端末名 : Zenfone8
+お問い合わせ内容の種類 : 不具合について
+ご利用環境 : Google Play
+問題が発生した日時 : 2024-03-05 14:30
+メールアドレス : 
+お問い合わせ内容 ：リュックに入れたアイテムが消える時があります。
+14時半頃に鉢が消えたのと、10時頃に巾着袋が消えました。
+元に戻してもらうことは可能でしょうか？
+添付ファイル ：'>お問い合わせ
+アカウントID : 
+
+プレイヤー名 : 
+
+ご利用のOSバージョン : Androi...</div>
+                        <span class='expand-btn' onclick="toggleText('ja_1064_1')">[展开]</span>
+                        <div id='ja_1064_1' class='full-text'>お問い合わせ
+アカウントID : 
+
+プレイヤー名 : 
+
+ご利用のOSバージョン : Android13
+ご利用端末名 : Zenfone8
+お問い合わせ内容の種類 : 不具合について
+ご利用環境 : Google Play
+問題が発生した日時 : 2024-03-05 14:30
+メールアドレス : 
+お問い合わせ内容 ：リュックに入れたアイテムが消える時があります。
+14時半頃に鉢が消えたのと、10時頃に巾着袋が消えました。
+元に戻してもらうことは可能でしょうか？
+添付ファイル ：</div>
+                    </td>
+                    <td>
+                        <div class='zh-text'>非常抱歉带来困扰！根据反馈，放入背包的物品实际收纳在「零件」或「发射器」栏，请优...</div>
+                        <span class='expand-btn' onclick="toggleText('zh_1064_1')">[展开]</span>
+                        <div id='zh_1064_1' class='full-text'>非常抱歉带来困扰！根据反馈，放入背包的物品实际收纳在「零件」或「发射器」栏，请优先检查这两个分类。如仍未找到，请尝试重启应用。技术团队正在调查此异常，预计3-5个工作日回复。请补充应用版本号以便排查。感谢您的理解！</div>
+                    </td>
+                    <td>
+                        <div class='reply-text'><b>生成:</b> 大変ご迷惑をおかけして申し訳ございません。
+いただいたご報告により、バックパックに収納したアイテムが...</div>
+                        <span class='expand-btn' onclick="toggleText('reply_1064_1')">[展开]</span>
+                        <div id='reply_1064_1' class='full-text'><b>生成:</b> 大変ご迷惑をおかけして申し訳ございません。
+いただいたご報告により、バックパックに収納したアイテムが、実際には「パーツ」または「ランチャー」欄に格納されているケースがございます。まずは該当の2つの分類をご確認ください。
+それでも見つからない場合は、アプリの再起動をお試しください。
+現在、技術チームにてこの不具合を調査しており、3～5営業日以内にご返信させていただく予定です。
+調査のため、アプリのバージョン番号も併せてご教示いただけますと幸いです。
+ご理解いただきありがとうございます。
+
+<b>标准:</b> いつもご利用いただきありがとうございます。
+『ぽちゃガチョ！』サポート担当です。
+この度は、ご丁寧にお礼のご連絡をくださりありがとうございます。
+『ぽちゃガチョ！』をプレイしていただく中で、何かお困りの点や気になる点などがございましたら、お気軽にお問い合わせいただけると幸いです。
+今後とも『ぽちゃガチョ！』をよろしくお願いいたします。
+※本メール内容の無断掲載、無断複製、転送はお控えください。</div>
+                    </td>
+                    <td class='latency'>134747ms</td>
+                    <td><span class='score low'>0.0000</span></td>
+                    <td><span class='score low'>0.1967</span></td>
+                    <td><span class='score medium'>0.4892</span></td>
+                </tr>
+                <tr class='round-sub'>
+                    <td>
+                        <span class='round-badge'>R2</span>
+                        <div class='ja-text' title='ランチャーの方に入っていました。
+お手数をおかけしました。
+原田奈々'>ランチャーの方に入っていました。
+お手数をおかけしました。
+原田奈々</div>
+                        <span class='expand-btn' onclick="toggleText('ja_1064_2')">[展开]</span>
+                        <div id='ja_1064_2' class='full-text'>ランチャーの方に入っていました。
+お手数をおかけしました。
+原田奈々</div>
+                    </td>
+                    <td>
+                        <div class='zh-text'>非常抱歉带来困扰！根据反馈，放入背包的物品实际收纳在「零件」或「发射器」栏，请优...</div>
+                        <span class='expand-btn' onclick="toggleText('zh_1064_2')">[展开]</span>
+                        <div id='zh_1064_2' class='full-text'>非常抱歉带来困扰！根据反馈，放入背包的物品实际收纳在「零件」或「发射器」栏，请优先检查这两个分类。如仍未找到，请尝试重启应用。关于物品恢复，技术团队正在调查，预计3-5个工作日回复。请补充应用版本号以便排查。感谢您的理解！</div>
+                    </td>
+                    <td>
+                        <div class='reply-text'><b>生成:</b> </div>
+                        <span class='expand-btn' onclick="toggleText('reply_1064_2')">[展开]</span>
+                        <div id='reply_1064_2' class='full-text'><b>生成:</b> 
+
+<b>标准:</b> いつもご利用いただきありがとうございます。
+『ぽちゃガチョ！』サポート担当です。
+お問い合わせいただきました件について、ご案内いたします。
+リュックへアイテムやピースを入れた場合、「パーツ」欄もしくは「ランチャー」欄に収納されます。
+そのため、既にご確認いただいておりましたら申し訳ございませんが、あらためてリュック内をご確認いただけますと幸いです。
+ご確認いただいたうえで問題が解決しない場合、お手数ですが「リュック」内の「パーツ」「ランチャー」欄のスクリーンショットをお送りを添付のうえ、再度お問い合わせいただけないでしょうか。
+今後とも『ぽちゃガチョ！』をよろしくお願いいたします。
+※本メール内容の無断掲載、無断複製、転送はお控えください。</div>
+                    </td>
+                    <td class='latency'>108606ms</td>
+                    <td><span class='score low'>0.0000</span></td>
+                    <td><span class='score low'>0.0000</span></td>
+                    <td><span class='score medium'>0.4329</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
