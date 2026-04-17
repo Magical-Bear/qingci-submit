@@ -25,12 +25,12 @@ from codes.evaluation.metrics import compute_all
 from codes.llm import chat
 
 # ==================== 用户可配置常量 ====================
-extract_nums = 10  # 从 eval.csv 抽取评测的条数
-submit_nums = 4  # 给大模型评估的最好/最差翻译片段数量
+extract_nums = 2  # 从 eval.csv 抽取评测的条数
+submit_nums = 2 # 给大模型评估的最好/最差翻译片段数量
 
 # ==================== 其他常量 ====================
 RANDOM_SEED = 42
-CONCURRENCY = 3
+CONCURRENCY = 2
 BASE_URL = f"http://{settings.host}:{settings.port}"
 REPORT_DIR = BASE_DIR / "report" / "evals"
 
@@ -292,7 +292,7 @@ async def run_llm_assessment(
     prompt_lines.extend([
         "",
         "=" * 50,
-        "【得分最高的 submit_nums 条样本】",
+        f"【得分最高的 {submit_nums} 条样本】",
         "=" * 50,
     ])
 
@@ -315,7 +315,7 @@ async def run_llm_assessment(
     prompt_lines.extend([
         "",
         "=" * 50,
-        "【得分最低的 3 条样本】",
+        f"【得分最低的 {submit_nums} 条样本】",
         "=" * 50,
     ])
 
@@ -653,6 +653,7 @@ async def main():
 
     print("\n正在进行大模型质量评估...")
     llm_summary = await run_llm_assessment(results, overall_avg)
+    print(llm_summary)
     print("大模型评估完成")
 
     now = datetime.now()
